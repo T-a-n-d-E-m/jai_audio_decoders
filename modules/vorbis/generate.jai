@@ -22,7 +22,7 @@ compile_library :: (args: [] string) -> bool {
 
 	#if OS == {
 		case .LINUX;
-			// Silence a bunch of errors
+			// Silence a bunch of warnings
 			lib_directory = "linux";
 			array_add(*extra, tprint("-Wno-int-conversion"));
 			array_add(*extra, tprint("-Wno-pointer-sign"));
