@@ -16,7 +16,7 @@ off_t        :: s64; // @TODO: How big is this on windows? What type does it map
 
 	case .LINUX;
 		flac :: #library "linux/flac";
-		#library,system,link_always "m"; // @TODO: can't this be done when the library is built
+		#library,system,link_always "m";
 
 	case .MACOS;
 		flac :: #library "macos/flac";
