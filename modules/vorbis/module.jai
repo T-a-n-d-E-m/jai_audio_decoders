@@ -10,7 +10,7 @@
 
 	case .LINUX;
 		vorbis :: #library "linux/vorbis";
-		#library,system,link_always "m"; // @TODO: can't this be done when the library is built
+		#library,system,link_always "m";
 
 	case .MACOS;
 		vorbis :: #library "macos/vorbis";
