@@ -18,17 +18,23 @@ compile_library :: (args: [] string) -> bool {
 	compile_debug := array_find(args, "-debug");
 
 	lib_directory: string;
+	extra: [..] string;
 	#if OS == {
-		case .LINUX  ; lib_directory = "linux";
-		case .MACOS  ; return false;
-		case .WINDOWS; return false;
+		case .LINUX;
+			lib_directory = "linux";
+
+		case .WINDOWS;
+			lib_directory = "windows";
+			array_add(*extra, "/Dextern=__declspec(dllexport)");
+
+		case .MACOS;
+			return false;
 	}
 
 	source_files: [..] string;
 	array_add(*source_files, tprint("%/src/bitwise.c", SRC_PATH));
 	array_add(*source_files, tprint("%/src/framing.c", SRC_PATH));
 
-	extra: [..] string;
 	array_add(*extra, tprint("-I%/include/", SRC_PATH));
 
 	make_directory_if_it_does_not_exist(lib_directory, recursive=true);

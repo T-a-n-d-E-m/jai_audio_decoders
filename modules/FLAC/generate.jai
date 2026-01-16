@@ -28,17 +28,15 @@ compile_library :: (args: [] string) -> bool {
 	#if OS == {
 		case .LINUX;
 			lib_directory = "linux";
-			array_add(*extra, "-DPACKAGE_VERSION=\"1.5.0\"");
-			array_add(*extra, "-DSIZE_T_MAX=0xFFFFFFFFFFFFFFFF");
 			array_add(*extra, "-DHAVE_LROUND");
 			array_add(*extra, "-DHAVE_PTHREAD");
-			array_add(*extra, tprint("-DFLAC__HAS_OGG=%", cast(u32)with_ogg));
+
+		case .WINDOWS;
+			lib_directory = "windows";
+			array_add(*extra, "-Dfileno=_fileno"); // src/libFLAC/stream_decoder.c doesn't account for this being named differently on Windows.
 
 		// Not implemented
-		case .MACOS;
-			return false;
-		case .WINDOWS;
-			return false;
+		case .MACOS; return false;
 	}
 
 	source_files: [..] string;
@@ -75,6 +73,9 @@ compile_library :: (args: [] string) -> bool {
 	array_add(*source_files, tprint("%/src/libFLAC/stream_encoder_intrin_sse2.c", SRC_PATH));
 	array_add(*source_files, tprint("%/src/libFLAC/stream_encoder_intrin_ssse3.c", SRC_PATH));
 	array_add(*source_files, tprint("%/src/libFLAC/window.c", SRC_PATH));
+	#if OS == .WINDOWS {
+		array_add(*source_files, tprint("%/src/share/win_utf8_io/win_utf8_io.c", SRC_PATH));
+	}
 
 	// OGG is built into the library...
 	array_add(*source_files, tprint("%/../../../ogg/src/libogg-1.3.6/src/bitwise.c", SRC_PATH));
@@ -83,10 +84,20 @@ compile_library :: (args: [] string) -> bool {
 	array_add(*extra, tprint("-I%/src/libFLAC/include", SRC_PATH));
 	array_add(*extra, tprint("-I%/include", SRC_PATH));
 
+	array_add(*extra, "-DPACKAGE_VERSION=\"1.5.0\"");
+	array_add(*extra, "-DSIZE_T_MAX=0xFFFFFFFFFFFFFFFF");
+	array_add(*extra, tprint("-DFLAC__HAS_OGG=%", cast(u32)with_ogg));
+
+	// Need the OGG headers too
+	array_add(*extra, tprint("-I%/../../../ogg/src/libogg-1.3.6/include", SRC_PATH));
+
 	make_directory_if_it_does_not_exist(lib_directory, recursive=true);
 	lib_path := tprint("%/%", lib_directory, LIB_BASE_NAME);
-
 	success := true;
+	#if OS == .WINDOWS {
+		// See comments in src/flac-1.5.0/include/FLAC/export.h
+		array_add(*extra, "/DFLAC_API_EXPORTS");
+	}
 	success &&= Build_Cpp.build_cpp_dynamic_lib(lib_path, ..source_files, debug=compile_debug, extra=extra);
 	success &&= Build_Cpp.build_cpp_static_lib(lib_path, ..source_files, debug=compile_debug, extra=extra);
 

@@ -19,11 +19,12 @@ compile_library :: (args: [] string) -> bool {
 
 	lib_directory: string;
 	extra: [..] string;
+	linker: [..] string;
 
 	#if OS == {
 		case .LINUX;
-			// Silence a bunch of warnings
 			lib_directory = "linux";
+			// Silence a bunch of warnings
 			array_add(*extra, tprint("-Wno-int-conversion"));
 			array_add(*extra, tprint("-Wno-pointer-sign"));
 			array_add(*extra, tprint("-Wno-implicit-function-declaration"));
@@ -31,11 +32,15 @@ compile_library :: (args: [] string) -> bool {
 			array_add(*extra, tprint("-Wno-incompatible-pointer-types"));
 			array_add(*extra, tprint("-Wno-excess-initializers"));
 
-		// Not implemented
-		case .MACOS;
-			return false;
 		case .WINDOWS;
-			return false;
+			lib_directory = "windows";
+			array_add(*extra, "/Dextern=__declspec(dllexport)");
+			//array_add(*linker, tprint("/DEF:%/win32/vorbis.def", SRC_PATH));
+			//array_add(*linker, tprint("/DEF:%/win32/vorbisenc.def", SRC_PATH));
+			//array_add(*linker, tprint("/DEF:%/win32/vorbisfile.def", SRC_PATH));
+
+		// Not implemented
+		case .MACOS; return false;
 	}
 
 	source_files: [..] string;
@@ -68,6 +73,9 @@ compile_library :: (args: [] string) -> bool {
 
 	array_add(*extra, tprint("-I%/include/", SRC_PATH));
 	array_add(*extra, tprint("-I%/lib/", SRC_PATH));
+
+	// Need the OGG headers too
+	array_add(*extra, tprint("-I%/../../../ogg/src/libogg-1.3.6/include", SRC_PATH));
 
 	make_directory_if_it_does_not_exist(lib_directory, recursive=true);
 	lib_path := tprint("%/%", lib_directory, LIB_BASE_NAME);
